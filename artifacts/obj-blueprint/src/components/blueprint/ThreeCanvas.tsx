@@ -31,7 +31,7 @@ const CameraManager = () => {
   return (
     <>
       {viewMode === '3d' ? (
-        <PerspectiveCamera makeDefault fov={45} position={[50, 50, 50]} />
+        <PerspectiveCamera makeDefault fov={45} near={0.01} far={100000} position={[50, 50, 50]} />
       ) : (
         <OrthographicCamera makeDefault zoom={10} position={[0, 0, 100]} near={-1000} far={1000} />
       )}
@@ -262,7 +262,7 @@ const ThreeCanvas = React.forwardRef<HTMLCanvasElement>((_props, ref) => {
     <div className={`w-full h-full relative ${isDrawing ? 'cursor-crosshair' : 'cursor-grab'}`}>
       <Canvas
         ref={ref}
-        gl={{ preserveDrawingBuffer: true, antialias: true }}
+        gl={{ preserveDrawingBuffer: true, antialias: true, logarithmicDepthBuffer: true }}
         className="outline-none"
       >
         <color attach="background" args={['#0d1117']} />
