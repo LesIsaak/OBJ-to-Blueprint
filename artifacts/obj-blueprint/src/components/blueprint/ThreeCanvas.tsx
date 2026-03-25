@@ -142,9 +142,7 @@ const SnapController: React.FC = () => {
     e.stopPropagation();
     const raw = new THREE.Vector3(e.point.x, e.point.y, e.point.z);
     const { pos, snapped } = resolvePoint(raw);
-    const next = { hoverPos: pos, snapped };
-    snapStateRef.current = next;
-    setSnapState(next);
+    setSnapState({ hoverPos: pos, snapped });
   }, [isDrawing, resolvePoint]);
 
   const handlePointerDown = useCallback((e: any) => {
