@@ -123,13 +123,10 @@ interface SnapState {
 }
 
 const SnapController: React.FC = () => {
+  // All hooks must be called unconditionally at the top
   const { viewMode, isDrawing, draftPoint, setDraftPoint, addDimension } = useBlueprintStore();
   const { camera } = useThree();
   const [snapState, setSnapState] = useState<SnapState>({ hoverPos: null, snapped: false });
-  const snapStateRef = useRef<SnapState>({ hoverPos: null, snapped: false });
-
-  // Only active in 2D views
-  if (viewMode === '3d') return null;
 
   const resolvePoint = useCallback((rawPoint: THREE.Vector3): { pos: THREE.Vector3; snapped: boolean } => {
     const radius = getSnapRadius(camera);
@@ -140,7 +137,7 @@ const SnapController: React.FC = () => {
     return { pos: rawPoint.clone(), snapped: false };
   }, [camera]);
 
-  const handlePointerMove = (e: any) => {
+  const handlePointerMove = useCallback((e: any) => {
     if (!isDrawing) return;
     e.stopPropagation();
     const raw = new THREE.Vector3(e.point.x, e.point.y, e.point.z);
@@ -148,9 +145,9 @@ const SnapController: React.FC = () => {
     const next = { hoverPos: pos, snapped };
     snapStateRef.current = next;
     setSnapState(next);
-  };
+  }, [isDrawing, resolvePoint]);
 
-  const handlePointerDown = (e: any) => {
+  const handlePointerDown = useCallback((e: any) => {
     if (!isDrawing) return;
     e.stopPropagation();
     const raw = new THREE.Vector3(e.point.x, e.point.y, e.point.z);
@@ -162,11 +159,14 @@ const SnapController: React.FC = () => {
     } else {
       addDimension(draftPoint, pt);
     }
-  };
+  }, [isDrawing, resolvePoint, draftPoint, setDraftPoint, addDimension]);
 
-  const handlePointerLeave = () => {
+  const handlePointerLeave = useCallback(() => {
     setSnapState({ hoverPos: null, snapped: false });
-  };
+  }, []);
+
+  // Only active in 2D views — conditional return AFTER all hooks
+  if (viewMode === '3d') return null;
 
   return (
     <>
