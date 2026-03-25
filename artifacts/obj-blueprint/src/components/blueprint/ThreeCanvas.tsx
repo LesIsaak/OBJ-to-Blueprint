@@ -80,14 +80,13 @@ const PointIndicator: React.FC<PointIndicatorProps> = ({ position, snapped, puls
   });
 
   const color = snapped ? '#00ff99' : '#ffaa00';
-  const ringColor = snapped ? '#00ff9966' : '#ffaa0066';
 
   return (
     <group position={position} renderOrder={100}>
       {/* Outer pulsing ring */}
       <mesh ref={ringRef} renderOrder={99}>
         <ringGeometry args={[0.55, 0.85, 32]} />
-        <meshBasicMaterial color={ringColor} transparent opacity={0.5} depthTest={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={color} transparent opacity={0.35} depthTest={false} side={THREE.DoubleSide} />
       </mesh>
       {/* Inner dot */}
       <mesh ref={meshRef} renderOrder={100}>

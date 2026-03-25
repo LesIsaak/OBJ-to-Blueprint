@@ -18,26 +18,35 @@ export const ModelViewer: React.FC = () => {
 
       loadedObj.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          child.material = new THREE.MeshBasicMaterial({
-            color: viewMode === '3d' ? 0x88ccff : 0x58a6ff,
-            wireframe: viewMode !== '3d',
-            transparent: true,
-            opacity: 0.8,
-          });
+          // Dispose any old material first
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m: THREE.Material) => m.dispose());
+            } else {
+              (child.material as THREE.Material).dispose();
+            }
+          }
 
           if (viewMode === '3d') {
-            const solidMat = new THREE.MeshStandardMaterial({
-              color: 0x0d1117,
-              roughness: 0.7,
-              metalness: 0.3,
-              polygonOffset: true,
-              polygonOffsetFactor: 1,
-              polygonOffsetUnits: 1,
+            // Solid shaded material — single material so geometry groups aren't needed
+            child.material = new THREE.MeshStandardMaterial({
+              color: 0x4a90d9,
+              roughness: 0.5,
+              metalness: 0.1,
+              side: THREE.DoubleSide,
             });
-            child.material = [solidMat, child.material];
+          } else {
+            // Blueprint wireframe style for 2D orthographic views
+            child.material = new THREE.MeshBasicMaterial({
+              color: 0x58a6ff,
+              wireframe: true,
+              transparent: true,
+              opacity: 0.9,
+            });
           }
         }
       });
+
       return loadedObj;
     } catch (e) {
       console.error('Failed to parse OBJ', e);
@@ -52,7 +61,7 @@ export const ModelViewer: React.FC = () => {
       return;
     }
 
-    // Wait one frame for Center to apply its offset
+    // Wait one frame for Center to apply its offset to matrixWorld
     const raf = requestAnimationFrame(() => {
       const verts: THREE.Vector3[] = [];
       const seen = new Set<string>();
@@ -65,7 +74,9 @@ export const ModelViewer: React.FC = () => {
           const worldMat = child.matrixWorld;
 
           for (let i = 0; i < pos.count; i++) {
-            const v = new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(worldMat);
+            const v = new THREE.Vector3()
+              .fromBufferAttribute(pos, i)
+              .applyMatrix4(worldMat);
             // Deduplicate to a ~0.01 grid to keep the vertex list small
             const key = `${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(2)}`;
             if (!seen.has(key)) {

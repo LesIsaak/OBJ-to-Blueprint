@@ -62,7 +62,7 @@ export const DimensionLine: React.FC<DimensionLineProps> = ({ dimension }) => {
       <Line points={[t2_start.toArray(), t2_end.toArray()]} color={color} lineWidth={2} depthTest={false} renderOrder={10} />
 
       {/* Invisible thicker line for easier clicking */}
-      <Line points={[p1, p2]} color="transparent" lineWidth={15} depthTest={false} renderOrder={9} />
+      <Line points={[p1, p2]} color="#000000" transparent opacity={0} lineWidth={15} depthTest={false} renderOrder={9} />
 
       <Html position={midPoint} center zIndexRange={[100, 0]}>
         <div 
