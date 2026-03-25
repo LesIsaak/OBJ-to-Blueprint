@@ -185,12 +185,13 @@ const SnapController: React.FC = () => {
 
   const resolvePoint = useCallback((rawPoint: THREE.Vector3): { pos: THREE.Vector3; snapped: boolean } => {
     const radius = getSnapRadius(camera);
-    const nearest = vertexStore.findNearest(rawPoint, radius);
+    // Use projected 2D distance so snapping works correctly in orthographic views
+    const nearest = vertexStore.findNearestProjected(rawPoint, radius, viewMode as any);
     if (nearest) {
       return { pos: nearest.clone(), snapped: true };
     }
     return { pos: rawPoint.clone(), snapped: false };
-  }, [camera]);
+  }, [camera, viewMode]);
 
   const handlePointerMove = useCallback((e: any) => {
     if (!isDrawing) return;
@@ -221,6 +222,14 @@ const SnapController: React.FC = () => {
   // Only active in 2D views — conditional return AFTER all hooks
   if (viewMode === '3d') return null;
 
+  // Plane must be perpendicular to the camera's look direction:
+  //   front / back  → camera along Z  → XY plane  → no rotation
+  //   left  / right → camera along X  → YZ plane  → rotate Y by 90°
+  const planeRotation: [number, number, number] =
+    viewMode === 'left' || viewMode === 'right'
+      ? [0, Math.PI / 2, 0]
+      : [0, 0, 0];
+
   return (
     <>
       {/* Large invisible plane to capture pointer events */}
@@ -230,6 +239,7 @@ const SnapController: React.FC = () => {
         onPointerDown={handlePointerDown}
         onPointerLeave={handlePointerLeave}
         position={[0, 0, 0]}
+        rotation={planeRotation}
       >
         <planeGeometry args={[100000, 100000]} />
         <meshBasicMaterial side={THREE.DoubleSide} transparent opacity={0.001} />
