@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, Component } from 'react';
 import { useBlueprintStore } from '@/store/use-blueprint-store';
 
 const ThreeCanvas = React.lazy(() => import('./ThreeCanvas'));
+
+// ─── Fallback: shown when no OBJ is loaded or WebGL fails ────────────────────
 
 const FallbackCanvas = () => {
   const { viewMode, dimensions, objData } = useBlueprintStore();
@@ -19,7 +21,8 @@ const FallbackCanvas = () => {
       <div
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: 'linear-gradient(#30363d 1px, transparent 1px), linear-gradient(90deg, #30363d 1px, transparent 1px)',
+          backgroundImage:
+            'linear-gradient(#30363d 1px, transparent 1px), linear-gradient(90deg, #30363d 1px, transparent 1px)',
           backgroundSize: '40px 40px',
         }}
       />
@@ -41,7 +44,9 @@ const FallbackCanvas = () => {
               </p>
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">No model loaded. Import an .obj file from the sidebar.</p>
+            <p className="text-muted-foreground text-sm">
+              No model loaded. Import an .obj file from the sidebar.
+            </p>
           )}
           {dimensions.length > 0 && (
             <div className="mt-4 pt-4 border-t border-[#30363d]">
@@ -63,46 +68,90 @@ const FallbackCanvas = () => {
   );
 };
 
+// ─── Error Boundary: catches WebGL / Three.js init failures ──────────────────
+
+interface EBState { hasError: boolean }
+
+class ThreeErrorBoundary extends Component<{ children: React.ReactNode; fallback: React.ReactNode }, EBState> {
+  state: EBState = { hasError: false };
+
+  static getDerivedStateFromError(): EBState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    // Suppress WebGL errors from propagating to Vite's overlay
+    if (error.message.includes('WebGL') || error.message.includes('Context')) return;
+    console.error('[ThreeErrorBoundary]', error);
+  }
+
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
+// ─── WebGL probe: returns result synchronously without creating a Three.js renderer ──
+
 function checkWebGLSupport(): boolean {
   try {
     const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    return !!gl;
+    const gl =
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl');
+    if (!gl) return false;
+    // Check for actual functionality
+    const ext = (gl as WebGLRenderingContext).getExtension?.('WEBGL_debug_renderer_info');
+    const vendor = ext
+      ? (gl as WebGLRenderingContext).getParameter?.((ext as any).UNMASKED_VENDOR_WEBGL)
+      : null;
+    // "0xffff" vendor is the Replit sandbox stub — it reports no GPU
+    if (typeof vendor === 'number' && vendor === 0xffff) return false;
+    return true;
   } catch {
     return false;
   }
 }
 
+// ─── Main export ──────────────────────────────────────────────────────────────
+
 interface BlueprintCanvasProps {}
 
-export const BlueprintCanvas = React.forwardRef<HTMLCanvasElement, BlueprintCanvasProps>((_props, ref) => {
-  const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
+export const BlueprintCanvas = React.forwardRef<HTMLCanvasElement, BlueprintCanvasProps>(
+  (_props, ref) => {
+    const [hasWebGL, setHasWebGL] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    setHasWebGL(checkWebGLSupport());
-  }, []);
+    useEffect(() => {
+      setHasWebGL(checkWebGLSupport());
+    }, []);
 
-  if (hasWebGL === null) {
+    if (hasWebGL === null) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#0d1117]">
+          <div className="text-blue-400 font-mono text-sm animate-pulse">Initializing viewport…</div>
+        </div>
+      );
+    }
+
+    if (!hasWebGL) {
+      return <FallbackCanvas />;
+    }
+
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0d1117]">
-        <div className="text-blue-400 font-mono text-sm animate-pulse">Initializing viewport...</div>
-      </div>
+      <ThreeErrorBoundary fallback={<FallbackCanvas />}>
+        <React.Suspense
+          fallback={
+            <div className="w-full h-full flex items-center justify-center bg-[#0d1117]">
+              <div className="text-blue-400 font-mono text-sm animate-pulse">Loading 3D renderer…</div>
+            </div>
+          }
+        >
+          <ThreeCanvas ref={ref} />
+        </React.Suspense>
+      </ThreeErrorBoundary>
     );
   }
-
-  if (!hasWebGL) {
-    return <FallbackCanvas />;
-  }
-
-  return (
-    <React.Suspense fallback={
-      <div className="w-full h-full flex items-center justify-center bg-[#0d1117]">
-        <div className="text-blue-400 font-mono text-sm animate-pulse">Loading 3D renderer...</div>
-      </div>
-    }>
-      <ThreeCanvas ref={ref} />
-    </React.Suspense>
-  );
-});
+);
 
 BlueprintCanvas.displayName = 'BlueprintCanvas';
