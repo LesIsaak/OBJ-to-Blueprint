@@ -1,32 +1,77 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, OrthographicCamera, PerspectiveCamera, Grid, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { useBlueprintStore } from '@/store/use-blueprint-store';
 import { ModelViewer } from './ModelViewer';
 import { DimensionLine } from './DimensionLine';
 import { vertexStore } from './vertexStore';
 
+// ─── Bounding info from OBJ ────────────────────────────────────────────────────
+
+function computeBounds(objData: string | null) {
+  if (!objData) return null;
+  try {
+    const obj = new OBJLoader().parse(objData);
+    const box = new THREE.Box3().setFromObject(obj);
+    if (box.isEmpty()) return null;
+    const size = box.getSize(new THREE.Vector3());
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+    return { size, radius: sphere.radius };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Camera & Controls ────────────────────────────────────────────────────────
 
 const CameraManager = () => {
   const viewMode = useBlueprintStore(state => state.viewMode);
-  const { camera } = useThree();
+  const objData  = useBlueprintStore(state => state.objData);
+  const { camera, size } = useThree();
 
+  const bounds = useMemo(() => computeBounds(objData), [objData]);
+
+  // Fit camera whenever model or view changes
   useEffect(() => {
-    const positions: Record<string, [number, number, number]> = {
-      '3d':   [50, 50, 50],
-      front:  [0, 0, 100],
-      back:   [0, 0, -100],
-      left:   [-100, 0, 0],
-      right:  [100, 0, 0],
-    };
-    const pos = positions[viewMode];
-    if (pos) {
+    const R = bounds?.radius ?? 50;
+    const boxSize = bounds?.size ?? new THREE.Vector3(R * 2, R * 2, R * 2);
+
+    if (camera instanceof THREE.PerspectiveCamera) {
+      const fovRad = (camera.fov * Math.PI) / 180;
+      const aspect = size.width / size.height;
+      const fovMin = Math.min(fovRad, 2 * Math.atan(Math.tan(fovRad / 2) * aspect));
+      const dist = (R / Math.sin(fovMin / 2)) * 1.3;
+      camera.position.set(dist * 0.577, dist * 0.577, dist * 0.577); // normalized (1,1,1)
+      camera.lookAt(0, 0, 0);
+    } else if (camera instanceof THREE.OrthographicCamera) {
+      // Projected extents per view direction
+      const [projW, projH] = (() => {
+        if (viewMode === 'front' || viewMode === 'back') return [boxSize.x, boxSize.y];
+        if (viewMode === 'left' || viewMode === 'right') return [boxSize.z, boxSize.y];
+        return [boxSize.x, boxSize.y];
+      })();
+
+      const padding = 1.25;
+      camera.zoom = Math.min(
+        size.width  / (projW  * padding),
+        size.height / (projH * padding),
+      );
+
+      const DIST = Math.max(R * 10, 1000);
+      const positions: Record<string, [number, number, number]> = {
+        front: [0, 0,     DIST],
+        back:  [0, 0,    -DIST],
+        left:  [-DIST, 0, 0],
+        right: [DIST,  0, 0],
+      };
+      const pos = positions[viewMode] ?? [0, 0, DIST];
       camera.position.set(...pos);
       camera.lookAt(0, 0, 0);
+      camera.updateProjectionMatrix();
     }
-  }, [viewMode, camera]);
+  }, [objData, viewMode, camera, size, bounds]);
 
   return (
     <>
@@ -40,6 +85,15 @@ const CameraManager = () => {
         enablePan
         enableZoom
         makeDefault
+        mouseButtons={{
+          LEFT:   viewMode === '3d' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
+          MIDDLE: THREE.MOUSE.DOLLY,
+          RIGHT:  THREE.MOUSE.PAN,
+        }}
+        touches={{
+          ONE: viewMode === '3d' ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN,
+          TWO: THREE.TOUCH.DOLLY_PAN,
+        }}
       />
     </>
   );
