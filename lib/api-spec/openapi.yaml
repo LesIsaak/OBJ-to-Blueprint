@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for OBJ Blueprint Maker
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Blueprint project operations
 paths:
   /healthz:
     get:
@@ -24,6 +25,93 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectRequest"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    put:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectRequest"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 components:
   schemas:
     HealthStatus:
@@ -33,4 +121,74 @@ components:
           type: string
       required:
         - status
-
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        objData:
+          type: string
+          nullable: true
+          description: Raw OBJ file content stored as text
+        dimensions:
+          type: string
+          nullable: true
+          description: JSON string of dimension chain data
+        unit:
+          type: string
+          enum: [mm, cm, m, in, ft]
+          default: mm
+        scale:
+          type: number
+          default: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - unit
+        - scale
+        - createdAt
+        - updatedAt
+    CreateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        objData:
+          type: string
+          nullable: true
+        dimensions:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          enum: [mm, cm, m, in, ft]
+          default: mm
+        scale:
+          type: number
+          default: 1
+      required:
+        - name
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        objData:
+          type: string
+          nullable: true
+        dimensions:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          enum: [mm, cm, m, in, ft]
+        scale:
+          type: number

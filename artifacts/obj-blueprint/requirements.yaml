@@ -1,0 +1,21 @@
+packages:
+  "three": "Core 3D rendering library"
+  "@types/three": "TypeScript definitions for Three.js"
+  "@react-three/fiber": "React wrapper for Three.js"
+  "@react-three/drei": "Helpful utilities for React Three Fiber"
+  "jspdf": "PDF generation for blueprint export"
+  "zustand": "Global state management for complex 3D application state"
+  "uuid": "Generating unique IDs for dimension chains"
+  "@types/uuid": "TypeScript definitions for uuid"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging Tailwind CSS classes without style conflicts"
+
+images:
+  - path: "artifacts/obj-blueprint/public/images/blueprint-bg.png"
+    description: "Abstract technical architectural blueprint background with subtle grid lines, geometry, and dark blue cyan aesthetic"
+    aspect_ratio: "16:9"
+
+notes:
+  - The application uses @react-three/fiber for WebGL rendering. The Canvas component needs preserveDrawingBuffer: true for PDF export to work.
+  - State is heavily managed by Zustand to decouple complex 3D interactions (like drawing dimensions) from standard React prop drilling.
+  - React Query hooks from @workspace/api-client-react are used for API communication.

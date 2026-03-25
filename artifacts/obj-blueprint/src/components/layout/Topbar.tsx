@@ -1,0 +1,80 @@
+import React, { useRef } from 'react';
+import { useBlueprintStore } from '@/store/use-blueprint-store';
+import { Button } from '@/components/ui/button';
+import { Box, ArrowUpSquare, ArrowDownSquare, ArrowLeftSquare, ArrowRightSquare, Download, Ruler } from 'lucide-react';
+import { exportToPdf } from '../blueprint/PdfExport';
+import { useToast } from '@/hooks/use-toast';
+
+interface TopbarProps {
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+}
+
+export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
+  const { viewMode, setViewMode, isDrawing, toggleDrawing, projectName } = useBlueprintStore();
+  const { toast } = useToast();
+
+  const handleExport = () => {
+    if (canvasRef.current) {
+      const success = exportToPdf(canvasRef.current, projectName);
+      if (success) {
+        toast({ title: "Export Successful", description: "PDF has been downloaded." });
+      } else {
+        toast({ variant: "destructive", title: "Export Failed", description: "Could not generate PDF." });
+      }
+    }
+  };
+
+  const views = [
+    { id: '3d', icon: Box, label: '3D View' },
+    { id: 'front', icon: ArrowDownSquare, label: 'Front' },
+    { id: 'back', icon: ArrowUpSquare, label: 'Back' },
+    { id: 'left', icon: ArrowLeftSquare, label: 'Left' },
+    { id: 'right', icon: ArrowRightSquare, label: 'Right' },
+  ] as const;
+
+  return (
+    <div className="h-16 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between px-4 z-10">
+      
+      {/* View Switcher */}
+      <div className="flex items-center gap-1 bg-background/50 p-1 rounded-lg border border-border/50">
+        {views.map((v) => {
+          const Icon = v.icon;
+          const isActive = viewMode === v.id;
+          return (
+            <Button
+              key={v.id}
+              variant={isActive ? "default" : "ghost"}
+              size="sm"
+              className={`h-8 px-3 ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              onClick={() => setViewMode(v.id as any)}
+              title={v.label}
+            >
+              <Icon className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline font-medium">{v.label}</span>
+            </Button>
+          )
+        })}
+      </div>
+
+      {/* Action Tools */}
+      <div className="flex items-center gap-3">
+        {viewMode !== '3d' && (
+          <Button 
+            variant={isDrawing ? "secondary" : "outline"} 
+            className={`border-dashed ${isDrawing ? 'bg-accent text-accent-foreground border-accent' : 'border-border'}`}
+            onClick={toggleDrawing}
+          >
+            <Ruler className="w-4 h-4 mr-2" />
+            {isDrawing ? 'Click canvas to draw' : 'Draw Dimension'}
+          </Button>
+        )}
+
+        <Button onClick={handleExport} className="bg-foreground text-background hover:bg-foreground/90 font-bold">
+          <Download className="w-4 h-4 mr-2" />
+          Export PDF
+        </Button>
+      </div>
+
+    </div>
+  );
+};
