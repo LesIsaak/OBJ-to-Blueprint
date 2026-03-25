@@ -59,14 +59,16 @@ const CameraManager = () => {
         size.height / (projH * padding),
       );
 
-      const DIST = Math.max(R * 10, 1000);
+      // Fixed offset — ortho rendering is independent of camera distance.
+      // near/far on the component span ±100000 so the model is never clipped.
+      const OFFSET = 500;
       const positions: Record<string, [number, number, number]> = {
-        front: [0, 0,     DIST],
-        back:  [0, 0,    -DIST],
-        left:  [-DIST, 0, 0],
-        right: [DIST,  0, 0],
+        front: [0, 0,      OFFSET],
+        back:  [0, 0,     -OFFSET],
+        left:  [-OFFSET, 0, 0],
+        right: [OFFSET,  0, 0],
       };
-      const pos = positions[viewMode] ?? [0, 0, DIST];
+      const pos = positions[viewMode] ?? [0, 0, OFFSET];
       camera.position.set(...pos);
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
@@ -78,7 +80,7 @@ const CameraManager = () => {
       {viewMode === '3d' ? (
         <PerspectiveCamera makeDefault fov={45} near={0.01} far={100000} position={[50, 50, 50]} />
       ) : (
-        <OrthographicCamera makeDefault zoom={10} position={[0, 0, 100]} near={-1000} far={1000} />
+        <OrthographicCamera makeDefault zoom={10} position={[0, 0, 500]} near={-100000} far={100000} />
       )}
       <OrbitControls
         enableRotate={viewMode === '3d'}
