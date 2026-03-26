@@ -23,19 +23,32 @@ export const ModelViewer: React.FC = () => {
       const loader = new OBJLoader();
       const loadedObj = loader.parse(objData);
 
+      // Collect meshes first (can't modify tree during traverse)
+      const meshesToEdge: Array<{ parent: THREE.Object3D; mesh: THREE.Mesh }> = [];
+
       loadedObj.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
+        if (child instanceof THREE.Mesh && child.parent) {
+          meshesToEdge.push({ parent: child.parent, mesh: child });
+        } else if (child instanceof THREE.LineSegments || child instanceof THREE.Line) {
           if (child.material) disposeMaterial(child.material);
-          child.material = new THREE.MeshBasicMaterial({
-            color: WIRE_COLOR,
-            wireframe: true,
-          });
-        }
-        if (child instanceof THREE.LineSegments || child instanceof THREE.Line) {
-          if (child.material) disposeMaterial(child.material);
-          child.material = new THREE.LineBasicMaterial({ color: WIRE_COLOR, linewidth: 1 });
+          child.material = new THREE.LineBasicMaterial({ color: WIRE_COLOR });
         }
       });
+
+      // Replace each mesh with its edge lines (shows only real model edges, not triangle fill)
+      for (const { parent, mesh } of meshesToEdge) {
+        const edgesGeo = new THREE.EdgesGeometry(mesh.geometry, 15); // 15° crease angle threshold
+        const lines = new THREE.LineSegments(
+          edgesGeo,
+          new THREE.LineBasicMaterial({ color: WIRE_COLOR }),
+        );
+        lines.matrix.copy(mesh.matrix);
+        lines.matrixAutoUpdate = false;
+        parent.remove(mesh);
+        parent.add(lines);
+        mesh.geometry.dispose();
+        if (mesh.material) disposeMaterial(mesh.material);
+      }
 
       return loadedObj;
     } catch (e) {

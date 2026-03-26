@@ -8,6 +8,12 @@ import { ModelViewer } from './ModelViewer';
 import { DimensionLine } from './DimensionLine';
 import { vertexStore } from './vertexStore';
 
+// Module-level ref so PdfExport can read the current camera
+export const exportCameraRef: { current: THREE.Camera | null; size: { w: number; h: number } } = {
+  current: null,
+  size: { w: 1, h: 1 },
+};
+
 // ─── Bounding info from OBJ ────────────────────────────────────────────────────
 
 function computeBounds(objData: string | null) {
@@ -33,6 +39,12 @@ const CameraManager = () => {
 
   const bounds = useMemo(() => computeBounds(objData), [objData]);
 
+  // Keep exportCameraRef up to date every frame
+  useFrame(() => {
+    exportCameraRef.current = camera;
+    exportCameraRef.size = { w: size.width, h: size.height };
+  });
+
   // Fit camera whenever model or view changes
   useEffect(() => {
     const R = bounds?.radius ?? 50;
@@ -43,10 +55,9 @@ const CameraManager = () => {
       const aspect = size.width / size.height;
       const fovMin = Math.min(fovRad, 2 * Math.atan(Math.tan(fovRad / 2) * aspect));
       const dist = (R / Math.sin(fovMin / 2)) * 1.3;
-      camera.position.set(dist * 0.577, dist * 0.577, dist * 0.577); // normalized (1,1,1)
+      camera.position.set(dist * 0.577, dist * 0.577, dist * 0.577);
       camera.lookAt(0, 0, 0);
     } else if (camera instanceof THREE.OrthographicCamera) {
-      // Projected extents per view direction
       const [projW, projH] = (() => {
         if (viewMode === 'front' || viewMode === 'back') return [boxSize.x, boxSize.y];
         if (viewMode === 'left' || viewMode === 'right') return [boxSize.z, boxSize.y];
@@ -59,8 +70,6 @@ const CameraManager = () => {
         size.height / (projH * padding),
       );
 
-      // Fixed offset — ortho rendering is independent of camera distance.
-      // near/far on the component span ±100000 so the model is never clipped.
       const OFFSET = 500;
       const positions: Record<string, [number, number, number]> = {
         front: [0, 0,      OFFSET],
@@ -104,12 +113,11 @@ const CameraManager = () => {
 // ─── Snap radius helper ───────────────────────────────────────────────────────
 
 function getSnapRadius(camera: THREE.Camera): number {
-  // In ortho views, snap radius scales with zoom
   if (camera instanceof THREE.OrthographicCamera) {
     const zoom = camera.zoom || 1;
-    return 30 / zoom; // world-unit snap radius, adapts to zoom level
+    return 30 / zoom;
   }
-  return 3; // perspective: fixed world-unit radius
+  return 3;
 }
 
 // ─── Point Indicator (hover + placed) ─────────────────────────────────────────
@@ -120,12 +128,45 @@ interface PointIndicatorProps {
 }
 
 const PointIndicator: React.FC<PointIndicatorProps> = ({ position, snapped }) => {
-  const color = snapped ? '#00ff99' : '#ffaa00';
+  const { camera } = useThree();
+  // Scale with camera zoom so indicator is always ~12px equivalent
+  const zoom = camera instanceof THREE.OrthographicCamera ? camera.zoom : 1;
+  const r = Math.max(0.3, 12 / zoom);
+
+  const innerColor = snapped ? '#00ff88' : '#ffcc00';
+
   return (
-    <mesh position={position} renderOrder={100}>
-      <circleGeometry args={[0.5, 24]} />
-      <meshBasicMaterial color={color} depthTest={false} side={THREE.DoubleSide} />
-    </mesh>
+    <group position={position} renderOrder={200}>
+      {/* White outer ring for visibility on any background */}
+      <mesh renderOrder={200}>
+        <ringGeometry args={[r * 1.2, r * 2.0, 20]} />
+        <meshBasicMaterial color="#ffffff" depthTest={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Colored inner dot */}
+      <mesh renderOrder={201}>
+        <circleGeometry args={[r * 1.1, 20]} />
+        <meshBasicMaterial color={innerColor} depthTest={false} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Cross-hair lines for precise targeting */}
+      <line renderOrder={202}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[new Float32Array([-r * 3, 0, 0, r * 3, 0, 0]), 3]}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial color="#ffffff" depthTest={false} transparent opacity={0.7} />
+      </line>
+      <line renderOrder={202}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            args={[new Float32Array([0, -r * 3, 0, 0, r * 3, 0]), 3]}
+          />
+        </bufferGeometry>
+        <lineBasicMaterial color="#ffffff" depthTest={false} transparent opacity={0.7} />
+      </line>
+    </group>
   );
 };
 
@@ -137,14 +178,12 @@ interface SnapState {
 }
 
 const SnapController: React.FC = () => {
-  // All hooks must be called unconditionally at the top
   const { viewMode, isDrawing, draftPoint, setDraftPoint, addDimension } = useBlueprintStore();
   const { camera } = useThree();
   const [snapState, setSnapState] = useState<SnapState>({ hoverPos: null, snapped: false });
 
   const resolvePoint = useCallback((rawPoint: THREE.Vector3): { pos: THREE.Vector3; snapped: boolean } => {
     const radius = getSnapRadius(camera);
-    // Use projected 2D distance so snapping works correctly in orthographic views
     const nearest = vertexStore.findNearestProjected(rawPoint, radius, viewMode as any);
     if (nearest) {
       return { pos: nearest.clone(), snapped: true };
@@ -171,6 +210,8 @@ const SnapController: React.FC = () => {
       setDraftPoint(pt);
     } else {
       addDimension(draftPoint, pt);
+      // After placing, clear hover so indicator resets
+      setSnapState({ hoverPos: null, snapped: false });
     }
   }, [isDrawing, resolvePoint, draftPoint, setDraftPoint, addDimension]);
 
@@ -178,12 +219,9 @@ const SnapController: React.FC = () => {
     setSnapState({ hoverPos: null, snapped: false });
   }, []);
 
-  // Only active in 2D views — conditional return AFTER all hooks
+  // Only active in 2D views
   if (viewMode === '3d') return null;
 
-  // Plane must be perpendicular to the camera's look direction:
-  //   front / back  → camera along Z  → XY plane  → no rotation
-  //   left  / right → camera along X  → YZ plane  → rotate Y by 90°
   const planeRotation: [number, number, number] =
     viewMode === 'left' || viewMode === 'right'
       ? [0, Math.PI / 2, 0]
@@ -214,7 +252,7 @@ const SnapController: React.FC = () => {
 
       {/* Draft (first placed) point indicator */}
       {isDrawing && draftPoint && (
-        <PointIndicator position={draftPoint} snapped={false} />
+        <PointIndicator position={draftPoint} snapped={true} />
       )}
 
       {/* Live rubber-band dimension line from draft point to hover */}
@@ -246,10 +284,10 @@ const RubberBandLine: React.FC<RubberBandLineProps> = ({ from, to }) => {
     <line renderOrder={90}>
       <bufferGeometry ref={lineRef} />
       <lineBasicMaterial
-        color="#ffaa00"
+        color="#ffcc00"
         depthTest={false}
         transparent
-        opacity={0.6}
+        opacity={0.7}
       />
     </line>
   );
@@ -316,9 +354,12 @@ const ThreeCanvas = React.forwardRef<HTMLCanvasElement>((_props, ref) => {
       {/* Drawing mode hint overlay */}
       {isDrawing && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
-          <div className="flex items-center gap-2 bg-black/60 border border-yellow-400/40 text-yellow-300 font-mono text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-            Click to place point · Snaps to model vertices · Press Esc to cancel
+          <div className="flex items-center gap-2 bg-black/70 border border-yellow-400/60 text-yellow-300 font-mono text-xs px-4 py-2 rounded-full backdrop-blur-sm shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+            {!useBlueprintStore.getState().draftPoint
+              ? 'Click first point · Snaps to model vertices'
+              : 'Click second point to complete measurement'}
+            <span className="text-yellow-400/60 ml-1">· Esc to cancel</span>
           </div>
         </div>
       )}

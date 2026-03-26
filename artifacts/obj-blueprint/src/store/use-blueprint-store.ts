@@ -133,7 +133,8 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
         { id: uuidv4(), view: vm, p1, p2, axis, chainIndex },
       ],
       draftPoint: null,
-      isDrawing: false,
+      // Stay in drawing mode so user can chain multiple measurements
+      isDrawing: true,
     };
   }),
 
