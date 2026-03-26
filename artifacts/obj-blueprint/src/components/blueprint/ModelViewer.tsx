@@ -14,6 +14,7 @@ const disposeMaterial = (mat: THREE.Material | THREE.Material[]) => {
 
 export const ModelViewer: React.FC = () => {
   const objData = useBlueprintStore(state => state.objData);
+  const setModelBounds = useBlueprintStore(state => state.setModelBounds);
   const groupRef = useRef<THREE.Group>(null);
 
   const obj = useMemo(() => {
@@ -23,7 +24,6 @@ export const ModelViewer: React.FC = () => {
       const loadedObj = loader.parse(objData);
 
       loadedObj.traverse((child) => {
-        // Face geometry → wireframe
         if (child instanceof THREE.Mesh) {
           if (child.material) disposeMaterial(child.material);
           child.material = new THREE.MeshBasicMaterial({
@@ -31,14 +31,9 @@ export const ModelViewer: React.FC = () => {
             wireframe: true,
           });
         }
-
-        // Explicit OBJ `l` lines (LineSegments or Line)
         if (child instanceof THREE.LineSegments || child instanceof THREE.Line) {
           if (child.material) disposeMaterial(child.material);
-          child.material = new THREE.LineBasicMaterial({
-            color: WIRE_COLOR,
-            linewidth: 1,
-          });
+          child.material = new THREE.LineBasicMaterial({ color: WIRE_COLOR, linewidth: 1 });
         }
       });
 
@@ -48,6 +43,22 @@ export const ModelViewer: React.FC = () => {
       return null;
     }
   }, [objData]);
+
+  // Publish centered model bounds to the store (safe: runs after render)
+  useEffect(() => {
+    if (!obj) {
+      setModelBounds(null);
+      return;
+    }
+    const box = new THREE.Box3().setFromObject(obj);
+    if (!box.isEmpty()) {
+      const size = box.getSize(new THREE.Vector3());
+      setModelBounds({
+        min: [-size.x / 2, -size.y / 2, -size.z / 2],
+        max: [ size.x / 2,  size.y / 2,  size.z / 2],
+      });
+    }
+  }, [obj, setModelBounds]);
 
   // Extract world-space vertices for snap after Center repositions the group
   useEffect(() => {
@@ -61,9 +72,14 @@ export const ModelViewer: React.FC = () => {
       const seen = new Set<string>();
 
       groupRef.current?.traverse((child) => {
-        if (!(child instanceof THREE.Mesh) &&
-            !(child instanceof THREE.LineSegments) &&
-            !(child instanceof THREE.Line)) return;
+        if (
+          !(child instanceof THREE.Mesh) &&
+          !(child instanceof THREE.LineSegments) &&
+          !(child instanceof THREE.Line)
+        ) return;
+
+        // Ensure matrixWorld is up to date after Center applies its transform
+        child.updateWorldMatrix(true, false);
 
         const geo = child.geometry as THREE.BufferGeometry;
         if (!geo.attributes.position) return;

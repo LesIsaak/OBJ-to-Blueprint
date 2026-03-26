@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, OrthographicCamera, PerspectiveCamera, Grid, Html } from '@react-three/drei';
+import { OrbitControls, OrthographicCamera, PerspectiveCamera, Grid } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { useBlueprintStore } from '@/store/use-blueprint-store';
@@ -117,56 +117,15 @@ function getSnapRadius(camera: THREE.Camera): number {
 interface PointIndicatorProps {
   position: [number, number, number];
   snapped: boolean;
-  pulsing?: boolean;
-  label?: string;
 }
 
-const PointIndicator: React.FC<PointIndicatorProps> = ({ position, snapped, pulsing = false, label }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const ringRef = useRef<THREE.Mesh>(null);
-  const t = useRef(0);
-
-  useFrame((_, delta) => {
-    if (!pulsing) return;
-    t.current += delta * 3;
-    const s = 1 + 0.25 * Math.sin(t.current);
-    if (ringRef.current) {
-      ringRef.current.scale.setScalar(s);
-    }
-  });
-
+const PointIndicator: React.FC<PointIndicatorProps> = ({ position, snapped }) => {
   const color = snapped ? '#00ff99' : '#ffaa00';
-
   return (
-    <group position={position} renderOrder={100}>
-      {/* Outer pulsing ring */}
-      <mesh ref={ringRef} renderOrder={99}>
-        <ringGeometry args={[0.55, 0.85, 32]} />
-        <meshBasicMaterial color={color} transparent opacity={0.35} depthTest={false} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Inner dot */}
-      <mesh ref={meshRef} renderOrder={100}>
-        <circleGeometry args={[0.35, 32]} />
-        <meshBasicMaterial color={color} depthTest={false} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Center crosshair lines */}
-      <lineSegments renderOrder={101}>
-        <bufferGeometry attach="geometry" onUpdate={(geo) => {
-          const pts = new Float32Array([-0.8, 0, 0, 0.8, 0, 0, 0, -0.8, 0, 0, 0.8, 0]);
-          geo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
-        }} />
-        <lineBasicMaterial color={color} depthTest={false} />
-      </lineSegments>
-      {/* Label */}
-      {label && (
-        <Html position={[0, 1.2, 0]} center zIndexRange={[200, 0]}>
-          <div className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold whitespace-nowrap pointer-events-none"
-            style={{ background: snapped ? '#00ff9922' : '#ffaa0022', border: `1px solid ${color}`, color }}>
-            {label}
-          </div>
-        </Html>
-      )}
-    </group>
+    <mesh position={position} renderOrder={100}>
+      <circleGeometry args={[0.5, 24]} />
+      <meshBasicMaterial color={color} depthTest={false} side={THREE.DoubleSide} />
+    </mesh>
   );
 };
 
@@ -250,19 +209,12 @@ const SnapController: React.FC = () => {
         <PointIndicator
           position={[snapState.hoverPos.x, snapState.hoverPos.y, snapState.hoverPos.z]}
           snapped={snapState.snapped}
-          pulsing={snapState.snapped}
-          label={snapState.snapped ? '⊕ snap' : undefined}
         />
       )}
 
       {/* Draft (first placed) point indicator */}
       {isDrawing && draftPoint && (
-        <PointIndicator
-          position={draftPoint}
-          snapped={false}
-          pulsing
-          label="P1"
-        />
+        <PointIndicator position={draftPoint} snapped={false} />
       )}
 
       {/* Live rubber-band dimension line from draft point to hover */}
