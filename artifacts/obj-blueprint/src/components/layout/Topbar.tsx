@@ -3,9 +3,10 @@ import { useBlueprintStore } from '@/store/use-blueprint-store';
 import { Button } from '@/components/ui/button';
 import {
   Box, ArrowUpSquare, ArrowDownSquare, ArrowLeftSquare, ArrowRightSquare,
-  Download, Ruler, Sun, Moon, PanelLeft, PanelRight,
+  Download, FileImage, Ruler, Sun, Moon, PanelLeft, PanelRight,
 } from 'lucide-react';
 import { exportToPdf } from '../blueprint/PdfExport';
+import { exportToSvg } from '../blueprint/SvgExport';
 import { useToast } from '@/hooks/use-toast';
 
 interface TopbarProps {
@@ -23,12 +24,21 @@ export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
   } = useBlueprintStore();
   const { toast } = useToast();
 
-  const handleExport = () => {
+  const handleExportPdf = () => {
     if (canvasRef.current) {
       const ok = exportToPdf(canvasRef.current, projectName, dimensions, scale, unit, modelBounds);
       toast(ok
-        ? { title: 'Export Successful', description: 'PDF has been downloaded.' }
-        : { variant: 'destructive', title: 'Export Failed', description: 'Could not generate PDF.' });
+        ? { title: 'PDF exported', description: 'Blueprint PDF downloaded.' }
+        : { variant: 'destructive', title: 'Export failed', description: 'Could not generate PDF.' });
+    }
+  };
+
+  const handleExportSvg = () => {
+    if (canvasRef.current) {
+      const ok = exportToSvg(canvasRef.current, projectName, dimensions, scale, unit, modelBounds);
+      toast(ok
+        ? { title: 'SVG exported', description: 'Blueprint SVG downloaded.' }
+        : { variant: 'destructive', title: 'Export failed', description: 'Could not generate SVG.' });
     }
   };
 
@@ -100,10 +110,16 @@ export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
           </Button>
         )}
 
-        {/* Export */}
-        <Button onClick={handleExport} className="bg-foreground text-background hover:bg-foreground/90 font-bold">
+        {/* SVG export */}
+        <Button variant="outline" onClick={handleExportSvg} title="Export SVG">
+          <FileImage className="w-4 h-4 mr-2" />
+          SVG
+        </Button>
+
+        {/* PDF export */}
+        <Button onClick={handleExportPdf} className="bg-foreground text-background hover:bg-foreground/90 font-bold">
           <Download className="w-4 h-4 mr-2" />
-          Export PDF
+          PDF
         </Button>
       </div>
 
