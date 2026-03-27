@@ -5,7 +5,8 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { useBlueprintStore } from '@/store/use-blueprint-store';
 import { vertexStore } from './vertexStore';
 
-const WIRE_COLOR = 0x58a6ff;
+const WIRE_COLOR_DARK  = 0x58a6ff;
+const WIRE_COLOR_LIGHT = 0x000000;
 const CREASE_ANGLE = 15;
 const COS_CREASE = Math.cos((CREASE_ANGLE * Math.PI) / 180);
 
@@ -86,6 +87,7 @@ function buildVisibleEdgeGeometry(
 export const ModelViewer: React.FC = () => {
   const objData      = useBlueprintStore(state => state.objData);
   const viewMode     = useBlueprintStore(state => state.viewMode);
+  const theme        = useBlueprintStore(state => state.theme);
   const setModelBounds = useBlueprintStore(state => state.setModelBounds);
   const groupRef     = useRef<THREE.Group>(null);
 
@@ -115,9 +117,10 @@ export const ModelViewer: React.FC = () => {
   const renderGroup = useMemo(() => {
     if (!rawMeshes) return null;
 
-    const group = new THREE.Group();
-    const is3d  = viewMode === '3d';
-    const viewDir = VIEW_DIRS[viewMode] ?? VIEW_DIRS.front;
+    const group     = new THREE.Group();
+    const is3d      = viewMode === '3d';
+    const viewDir   = VIEW_DIRS[viewMode] ?? VIEW_DIRS.front;
+    const wireColor = theme === 'light' ? WIRE_COLOR_LIGHT : WIRE_COLOR_DARK;
 
     for (const { geometry, matrix } of rawMeshes) {
       let edgesGeo: THREE.BufferGeometry;
@@ -127,7 +130,7 @@ export const ModelViewer: React.FC = () => {
         edgesGeo = new THREE.EdgesGeometry(geometry, CREASE_ANGLE);
         const lines = new THREE.LineSegments(
           edgesGeo,
-          new THREE.LineBasicMaterial({ color: WIRE_COLOR }),
+          new THREE.LineBasicMaterial({ color: wireColor }),
         );
         lines.matrix.copy(matrix);
         lines.matrixAutoUpdate = false;
@@ -138,14 +141,14 @@ export const ModelViewer: React.FC = () => {
         edgesGeo = buildVisibleEdgeGeometry(geometry, matrix, viewDir);
         const lines = new THREE.LineSegments(
           edgesGeo,
-          new THREE.LineBasicMaterial({ color: WIRE_COLOR }),
+          new THREE.LineBasicMaterial({ color: wireColor }),
         );
         group.add(lines);
       }
     }
 
     return group;
-  }, [rawMeshes, viewMode]);
+  }, [rawMeshes, viewMode, theme]);
 
   // ── Publish model bounds (for PDF/SVG title block scale) ───────────────────
   useEffect(() => {
