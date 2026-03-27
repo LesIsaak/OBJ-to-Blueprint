@@ -41,16 +41,9 @@ export function useProjectsManager() {
       onSuccess: (data) => {
         toast({ title: "Project Created", description: `Successfully created ${data.name}` });
         queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-        
-        // Load it into store
-        store.setProject({
-          id: data.id,
-          name: data.name,
-          objData: data.objData || null,
-          dimensions: parseDimensions(data.dimensions),
-          unit: data.unit as Unit,
-          scale: data.scale
-        });
+        // Only update the ID — everything else is already correct in the store.
+        // Calling setProject here would hard-reset viewMode to '3d', which is a bug.
+        store.setProjectId(data.id);
       },
       onError: (err: any) => {
         toast({ variant: "destructive", title: "Error", description: err.message || "Failed to create project" });

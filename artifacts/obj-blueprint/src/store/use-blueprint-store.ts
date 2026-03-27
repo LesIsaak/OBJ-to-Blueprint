@@ -42,6 +42,7 @@ interface BlueprintState {
 
   setProject: (data: { id: number; name: string; objData: string | null; dimensions: Dimension[]; unit: Unit; scale: number }) => void;
   resetProject: () => void;
+  setProjectId: (id: number) => void;
   setObjData: (data: string) => void;
   setModelBounds: (bounds: ModelBounds | null) => void;
   setProjectName: (name: string) => void;
@@ -110,6 +111,7 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
     selectedDimensionId: null,
   }),
 
+  setProjectId: (id) => set({ projectId: id }),
   setObjData: (data) => set({ objData: data }),
   setModelBounds: (bounds) => set({ modelBounds: bounds }),
   setProjectName: (name) => set({ projectName: name }),
