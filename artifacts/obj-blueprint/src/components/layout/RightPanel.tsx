@@ -136,20 +136,20 @@ export const RightPanel = () => {
                   variant="outline"
                   size="sm"
                   className="flex-1 h-9 gap-1.5 font-mono"
-                  onClick={() => handleChainMove(-1)}
+                  onClick={() => handleChainMove(-0.5)}
                   disabled={(selectedDim.chainIndex ?? 0) + (selectedDim.chainOffset ?? 0) <= 0}
                 >
                   <ChevronDown className="w-4 h-4" />
                   Closer
                 </Button>
                 <div className="w-10 text-center text-sm font-mono text-muted-foreground">
-                  {(selectedDim.chainIndex ?? 0) + (selectedDim.chainOffset ?? 0)}
+                  {((selectedDim.chainIndex ?? 0) + (selectedDim.chainOffset ?? 0)).toFixed(1)}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   className="flex-1 h-9 gap-1.5 font-mono"
-                  onClick={() => handleChainMove(+1)}
+                  onClick={() => handleChainMove(+0.5)}
                 >
                   Further
                   <ChevronUp className="w-4 h-4" />

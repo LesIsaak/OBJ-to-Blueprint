@@ -39,7 +39,7 @@ function buildDimGeometry(
 
   const GAP      = maxSize * 0.08;
   const SPACING  = maxSize * 0.10;
-  const TICK     = maxSize * 0.025;
+  const TICK     = maxSize * 0.015;
   const OVERSHOOT = maxSize * 0.012;
   // chainOffset lets the user manually shift this chain row further/closer
   const effectiveIndex = Math.max(0, chainIndex + chainOffset);

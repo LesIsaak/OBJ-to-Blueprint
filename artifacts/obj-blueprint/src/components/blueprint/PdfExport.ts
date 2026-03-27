@@ -3,6 +3,57 @@ import * as THREE from 'three';
 import { exportCameraRef } from './exportCamera';
 import type { Dimension, ModelBounds, Unit } from '@/store/use-blueprint-store';
 
+// ── Unit → millimetres conversion ─────────────────────────────────────────────
+const UNIT_TO_MM: Record<Unit, number> = {
+  mm: 1, cm: 10, m: 1000, in: 25.4, ft: 304.8,
+};
+
+// Snap N to the nearest standard architectural scale denominator
+function snapToStandard(n: number): number {
+  const standards = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000];
+  return standards.reduce((best, s) => Math.abs(s - n) < Math.abs(best - n) ? s : best);
+}
+
+/**
+ * Compute the actual print scale by projecting the model bounding-box diagonal
+ * onto the PDF image area and comparing it to the real-world diagonal (in mm).
+ *
+ *   paper distance (mm) : real distance (mm)
+ *   ≡ 1 : N   where N = realMm / paperMm
+ */
+function computePrintScale(
+  cam: THREE.Camera,
+  bounds: ModelBounds,
+  scale: number,
+  unit: Unit,
+  cw: number, ch: number,
+  imgX: number, imgY: number, imgW: number, imgH: number,
+): string {
+  const { min, max } = bounds;
+
+  // Project opposite corners of the AABB to PDF coordinates
+  const a = project3dToPdf(min, cam, cw, ch, imgX, imgY, imgW, imgH);
+  const b = project3dToPdf(max, cam, cw, ch, imgX, imgY, imgW, imgH);
+
+  const paperMm = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+  if (paperMm < 0.01) return '—';
+
+  const worldDist = Math.sqrt(
+    (max[0] - min[0]) ** 2 + (max[1] - min[1]) ** 2 + (max[2] - min[2]) ** 2,
+  );
+  const realMm = worldDist * scale * UNIT_TO_MM[unit];
+
+  const ratio = realMm / paperMm;   // mm in reality per mm on paper
+
+  if (ratio >= 1) {
+    return `1:${snapToStandard(ratio)}`;
+  } else {
+    // Enlargement
+    const inv = Math.round((1 / ratio) * 10) / 10;
+    return `${inv}:1`;
+  }
+}
+
 /**
  * Project a 3D world point to PDF page coordinates.
  */
@@ -42,7 +93,7 @@ function computeLabelWorldPos(
 
   const GAP      = maxSize * 0.08;
   const SPACING  = maxSize * 0.10;
-  const TICK     = maxSize * 0.025;
+  const TICK     = maxSize * 0.015;
   const effectiveIndex = Math.max(0, chainIndex + chainOffset);
   const offset   = GAP + effectiveIndex * SPACING;
 
@@ -138,10 +189,15 @@ export const exportToPdf = (
     pdf.setLineWidth(0.4);
     pdf.rect(marginX, marginY, areaW, areaH);
 
-    // ── Dimension labels — projected from exact 3D label positions ────────────
+    // ── Compute print scale ───────────────────────────────────────────────────
     const cam = exportCameraRef.current;
     const cw  = exportCameraRef.size.w || canvas.width;
     const ch  = exportCameraRef.size.h || canvas.height;
+    const printScale = (cam && modelBounds)
+      ? computePrintScale(cam, modelBounds, scale, unit, cw, ch, imgX, imgY, imgW, imgH)
+      : `${scale}:1`;
+
+    // ── Dimension labels — projected from exact 3D label positions ────────────
 
     if (cam && modelBounds && dimensions.length > 0) {
       pdf.setFontSize(7);
@@ -212,7 +268,7 @@ export const exportToPdf = (
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(7);
     pdf.setTextColor(150, 170, 200);
-    pdf.text(`Unit: ${unit}  ·  Scale: ${scale}`, col1 + 4, tbY + 19);
+    pdf.text(`Unit: ${unit}  ·  Print scale: ${printScale}`, col1 + 4, tbY + 19);
 
     pdf.setTextColor(88, 166, 255);
     pdf.setFontSize(6);
