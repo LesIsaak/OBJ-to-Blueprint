@@ -31,7 +31,7 @@ function buildDimGeometry(
   labelPos: Pt;
   measuredDist: number;
 } | null {
-  const { p1, p2, axis, chainIndex = 0, view } = dim;
+  const { p1, p2, axis, chainIndex = 0, chainOffset = 0, view } = dim;
   const { min, max } = bounds;
 
   const bSize = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
@@ -40,8 +40,10 @@ function buildDimGeometry(
   const GAP      = maxSize * 0.08;
   const SPACING  = maxSize * 0.10;
   const TICK     = maxSize * 0.025;
-  const OVERSHOOT = maxSize * 0.012;  // ext-line extends slightly past dim line
-  const offset   = GAP + chainIndex * SPACING;
+  const OVERSHOOT = maxSize * 0.012;
+  // chainOffset lets the user manually shift this chain row further/closer
+  const effectiveIndex = Math.max(0, chainIndex + chainOffset);
+  const offset   = GAP + effectiveIndex * SPACING;
 
   const isLeftRight = view === 'left' || view === 'right';
 

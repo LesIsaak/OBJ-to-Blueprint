@@ -18,6 +18,8 @@ export interface Dimension {
   customText?: string;
   axis?: DimAxis;
   chainIndex?: number;
+  /** Manual additional rows away from model (positive = further, negative = closer) */
+  chainOffset?: number;
 }
 
 interface BlueprintState {
