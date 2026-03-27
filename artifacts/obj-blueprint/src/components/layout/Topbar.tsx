@@ -10,12 +10,12 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
-  const { viewMode, setViewMode, isDrawing, toggleDrawing, projectName } = useBlueprintStore();
+  const { viewMode, setViewMode, isDrawing, toggleDrawing, projectName, dimensions, scale, unit } = useBlueprintStore();
   const { toast } = useToast();
 
   const handleExport = () => {
     if (canvasRef.current) {
-      const success = exportToPdf(canvasRef.current, projectName);
+      const success = exportToPdf(canvasRef.current, projectName, dimensions, scale, unit);
       if (success) {
         toast({ title: "Export Successful", description: "PDF has been downloaded." });
       } else {
