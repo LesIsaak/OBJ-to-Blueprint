@@ -32,6 +32,8 @@ interface BlueprintState {
   scale: number;
 
   theme: 'dark' | 'light';
+  leftPanelOpen: boolean;
+  rightPanelOpen: boolean;
 
   viewMode: ViewMode;
   isDrawing: boolean;
@@ -47,6 +49,8 @@ interface BlueprintState {
   setUnit: (unit: Unit) => void;
   setScale: (scale: number) => void;
   toggleTheme: () => void;
+  toggleLeftPanel: () => void;
+  toggleRightPanel: () => void;
 
   toggleDrawing: () => void;
   setDraftPoint: (point: [number, number, number] | null) => void;
@@ -70,6 +74,8 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
   scale: 1,
 
   theme: savedTheme,
+  leftPanelOpen: true,
+  rightPanelOpen: true,
 
   viewMode: '3d',
   isDrawing: false,
@@ -116,6 +122,8 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
     localStorage.setItem('blueprint-theme', next);
     return { theme: next };
   }),
+  toggleLeftPanel: () => set((state) => ({ leftPanelOpen: !state.leftPanelOpen })),
+  toggleRightPanel: () => set((state) => ({ rightPanelOpen: !state.rightPanelOpen })),
 
   toggleDrawing: () => set((state) => ({
     isDrawing: !state.isDrawing,
