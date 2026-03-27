@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, Plus, Save, Trash2, FolderOpen, Info } from 'lucide-react';
+import { Upload, FileText, Plus, Save, Trash2, FolderOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -151,10 +151,8 @@ export const Sidebar = () => {
               <Upload className="w-4 h-4 mr-2 text-muted-foreground" />
               <span className="text-muted-foreground font-medium">Upload 3D file</span>
             </Button>
-            <p className="text-xs text-muted-foreground flex gap-1 items-start">
-              <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-              Supported: OBJ, GLTF, GLB, STL.
-              For Cinema 4D, export to one of these formats first.
+            <p className="text-xs text-muted-foreground">
+              Supported: OBJ, GLTF, GLB, STL
             </p>
           </div>
 
