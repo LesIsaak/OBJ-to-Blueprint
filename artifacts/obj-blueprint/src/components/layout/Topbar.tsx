@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useBlueprintStore } from '@/store/use-blueprint-store';
 import { Button } from '@/components/ui/button';
-import { Box, ArrowUpSquare, ArrowDownSquare, ArrowLeftSquare, ArrowRightSquare, Download, Ruler } from 'lucide-react';
+import { Box, ArrowUpSquare, ArrowDownSquare, ArrowLeftSquare, ArrowRightSquare, Download, Ruler, Sun, Moon } from 'lucide-react';
 import { exportToPdf } from '../blueprint/PdfExport';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,12 +10,12 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
-  const { viewMode, setViewMode, isDrawing, toggleDrawing, projectName, dimensions, scale, unit } = useBlueprintStore();
+  const { viewMode, setViewMode, isDrawing, toggleDrawing, projectName, dimensions, scale, unit, modelBounds, theme, toggleTheme } = useBlueprintStore();
   const { toast } = useToast();
 
   const handleExport = () => {
     if (canvasRef.current) {
-      const success = exportToPdf(canvasRef.current, projectName, dimensions, scale, unit);
+      const success = exportToPdf(canvasRef.current, projectName, dimensions, scale, unit, modelBounds);
       if (success) {
         toast({ title: "Export Successful", description: "PDF has been downloaded." });
       } else {
@@ -34,7 +34,7 @@ export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
 
   return (
     <div className="h-16 border-b border-border bg-card/80 backdrop-blur-md flex items-center justify-between px-4 z-10">
-      
+
       {/* View Switcher */}
       <div className="flex items-center gap-1 bg-background/50 p-1 rounded-lg border border-border/50">
         {views.map((v) => {
@@ -52,15 +52,26 @@ export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
               <Icon className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline font-medium">{v.label}</span>
             </Button>
-          )
+          );
         })}
       </div>
 
       {/* Action Tools */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {/* Theme toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-9 w-9"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </Button>
+
         {viewMode !== '3d' && (
-          <Button 
-            variant={isDrawing ? "secondary" : "outline"} 
+          <Button
+            variant={isDrawing ? "secondary" : "outline"}
             className={`border-dashed ${isDrawing ? 'bg-accent text-accent-foreground border-accent' : 'border-border'}`}
             onClick={toggleDrawing}
           >
@@ -74,7 +85,6 @@ export const Topbar: React.FC<TopbarProps> = ({ canvasRef }) => {
           Export PDF
         </Button>
       </div>
-
     </div>
   );
 };

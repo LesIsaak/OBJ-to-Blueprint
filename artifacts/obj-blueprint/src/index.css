@@ -75,6 +75,37 @@
   --radius: 0.5rem;
 }
 
+/* ── Light theme override ─────────────────────────────────────────────────── */
+html.light {
+  --background: 210 20% 97%;
+  --foreground: 215 50% 12%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 215 50% 12%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 50% 12%;
+
+  --primary: 199 80% 38%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 215 20% 90%;
+  --secondary-foreground: 215 50% 12%;
+
+  --muted: 215 15% 92%;
+  --muted-foreground: 215 15% 42%;
+
+  --accent: 35 100% 45%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 215 15% 80%;
+  --input: 215 15% 88%;
+  --ring: 199 80% 38%;
+}
+
 @layer base {
   * {
     @apply border-border;

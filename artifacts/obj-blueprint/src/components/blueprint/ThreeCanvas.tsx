@@ -282,10 +282,15 @@ const RubberBandLine: React.FC<RubberBandLineProps> = ({ from, to }) => {
 
 const ThreeCanvas = React.forwardRef<HTMLCanvasElement>((_props, ref) => {
   const dimensions = useBlueprintStore(state => state.dimensions);
-  const viewMode = useBlueprintStore(state => state.viewMode);
-  const isDrawing = useBlueprintStore(state => state.isDrawing);
+  const viewMode   = useBlueprintStore(state => state.viewMode);
+  const isDrawing  = useBlueprintStore(state => state.isDrawing);
+  const theme      = useBlueprintStore(state => state.theme);
   const toggleDrawing = useBlueprintStore(state => state.toggleDrawing);
   const setDraftPoint = useBlueprintStore(state => state.setDraftPoint);
+
+  const canvasBg    = theme === 'light' ? '#eef2f7' : '#0d1117';
+  const gridSection = theme === 'light' ? '#b0bec8' : '#30363d';
+  const gridCell    = theme === 'light' ? '#d8e2ec' : '#161b22';
 
   // Escape cancels drawing mode
   useEffect(() => {
@@ -306,7 +311,7 @@ const ThreeCanvas = React.forwardRef<HTMLCanvasElement>((_props, ref) => {
         gl={{ preserveDrawingBuffer: true, antialias: true, logarithmicDepthBuffer: true }}
         className="outline-none"
       >
-        <color attach="background" args={['#0d1117']} />
+        <color attach="background" args={[canvasBg]} />
 
         <ambientLight intensity={0.8} />
         <directionalLight position={[10, 10, 10]} intensity={1.5} />
@@ -317,8 +322,8 @@ const ThreeCanvas = React.forwardRef<HTMLCanvasElement>((_props, ref) => {
         <Grid
           infiniteGrid
           fadeDistance={200}
-          sectionColor="#30363d"
-          cellColor="#161b22"
+          sectionColor={gridSection}
+          cellColor={gridCell}
           sectionSize={10}
           cellSize={2}
           position={[0, -0.1, 0]}

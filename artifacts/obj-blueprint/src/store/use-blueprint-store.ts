@@ -31,6 +31,8 @@ interface BlueprintState {
   unit: Unit;
   scale: number;
 
+  theme: 'dark' | 'light';
+
   viewMode: ViewMode;
   isDrawing: boolean;
   draftPoint: [number, number, number] | null;
@@ -44,6 +46,7 @@ interface BlueprintState {
   setViewMode: (mode: ViewMode) => void;
   setUnit: (unit: Unit) => void;
   setScale: (scale: number) => void;
+  toggleTheme: () => void;
 
   toggleDrawing: () => void;
   setDraftPoint: (point: [number, number, number] | null) => void;
@@ -53,6 +56,10 @@ interface BlueprintState {
   setSelectedDimension: (id: string | null) => void;
 }
 
+// Restore theme on init (before first render)
+const savedTheme = (localStorage.getItem('blueprint-theme') ?? 'dark') as 'dark' | 'light';
+if (savedTheme === 'light') document.documentElement.classList.add('light');
+
 export const useBlueprintStore = create<BlueprintState>((set) => ({
   projectId: null,
   projectName: 'Untitled Blueprint',
@@ -61,6 +68,8 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
   dimensions: [],
   unit: 'mm',
   scale: 1,
+
+  theme: savedTheme,
 
   viewMode: '3d',
   isDrawing: false,
@@ -101,6 +110,12 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
   setViewMode: (mode) => set({ viewMode: mode, isDrawing: false, draftPoint: null }),
   setUnit: (unit) => set({ unit }),
   setScale: (scale) => set({ scale }),
+  toggleTheme: () => set((state) => {
+    const next = state.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.classList.toggle('light', next === 'light');
+    localStorage.setItem('blueprint-theme', next);
+    return { theme: next };
+  }),
 
   toggleDrawing: () => set((state) => ({
     isDrawing: !state.isDrawing,
