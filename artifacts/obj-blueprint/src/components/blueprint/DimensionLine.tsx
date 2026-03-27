@@ -64,7 +64,7 @@ function buildDimGeometry(
       const mainLine: [Pt, Pt] = [[0, dimY, hMin], [0, dimY, hMax]];
       const tick1: [Pt, Pt] = [[0, dimY - TICK, hMin - TICK], [0, dimY + TICK, hMin + TICK]];
       const tick2: [Pt, Pt] = [[0, dimY - TICK, hMax - TICK], [0, dimY + TICK, hMax + TICK]];
-      const labelPos: Pt = [0, dimY - TICK * 2.5, (hMin + hMax) / 2];
+      const labelPos: Pt = [0, dimY - TICK * 1.0, (hMin + hMax) / 2];
       return { ext1, ext2, mainLine, tick1, tick2, labelPos, measuredDist: Math.abs(hMax - hMin) };
     } else {
       const startY = min[1];
@@ -73,7 +73,7 @@ function buildDimGeometry(
       const mainLine: [Pt, Pt] = [[hMin, dimY, 0], [hMax, dimY, 0]];
       const tick1: [Pt, Pt] = [[hMin - TICK, dimY - TICK, 0], [hMin + TICK, dimY + TICK, 0]];
       const tick2: [Pt, Pt] = [[hMax - TICK, dimY - TICK, 0], [hMax + TICK, dimY + TICK, 0]];
-      const labelPos: Pt = [(hMin + hMax) / 2, dimY - TICK * 2.5, 0];
+      const labelPos: Pt = [(hMin + hMax) / 2, dimY - TICK * 1.0, 0];
       return { ext1, ext2, mainLine, tick1, tick2, labelPos, measuredDist: Math.abs(hMax - hMin) };
     }
   }
@@ -92,7 +92,7 @@ function buildDimGeometry(
       const mainLine: [Pt, Pt] = [[0, vMin, dimZ], [0, vMax, dimZ]];
       const tick1: [Pt, Pt] = [[0, vMin - TICK, dimZ - TICK], [0, vMin + TICK, dimZ + TICK]];
       const tick2: [Pt, Pt] = [[0, vMax - TICK, dimZ - TICK], [0, vMax + TICK, dimZ + TICK]];
-      const labelPos: Pt = [0, (vMin + vMax) / 2, dimZ + TICK * 3];
+      const labelPos: Pt = [0, (vMin + vMax) / 2, dimZ + TICK * 1.2];
       return { ext1, ext2, mainLine, tick1, tick2, labelPos, measuredDist: Math.abs(vMax - vMin) };
     }
 
@@ -105,7 +105,7 @@ function buildDimGeometry(
       const mainLine: [Pt, Pt] = [[0, vMin, dimZ], [0, vMax, dimZ]];
       const tick1: [Pt, Pt] = [[0, vMin - TICK, dimZ + TICK], [0, vMin + TICK, dimZ - TICK]];
       const tick2: [Pt, Pt] = [[0, vMax - TICK, dimZ + TICK], [0, vMax + TICK, dimZ - TICK]];
-      const labelPos: Pt = [0, (vMin + vMax) / 2, dimZ - TICK * 3];
+      const labelPos: Pt = [0, (vMin + vMax) / 2, dimZ - TICK * 1.2];
       return { ext1, ext2, mainLine, tick1, tick2, labelPos, measuredDist: Math.abs(vMax - vMin) };
     }
 
@@ -118,7 +118,7 @@ function buildDimGeometry(
       const mainLine: [Pt, Pt] = [[dimX, vMin, 0], [dimX, vMax, 0]];
       const tick1: [Pt, Pt] = [[dimX - TICK, vMin - TICK, 0], [dimX + TICK, vMin + TICK, 0]];
       const tick2: [Pt, Pt] = [[dimX - TICK, vMax - TICK, 0], [dimX + TICK, vMax + TICK, 0]];
-      const labelPos: Pt = [dimX + TICK * 3, (vMin + vMax) / 2, 0];
+      const labelPos: Pt = [dimX + TICK * 1.2, (vMin + vMax) / 2, 0];
       return { ext1, ext2, mainLine, tick1, tick2, labelPos, measuredDist: Math.abs(vMax - vMin) };
     }
 
@@ -130,7 +130,7 @@ function buildDimGeometry(
     const mainLine: [Pt, Pt] = [[dimX, vMin, 0], [dimX, vMax, 0]];
     const tick1: [Pt, Pt] = [[dimX - TICK, vMin - TICK, 0], [dimX + TICK, vMin + TICK, 0]];
     const tick2: [Pt, Pt] = [[dimX - TICK, vMax - TICK, 0], [dimX + TICK, vMax + TICK, 0]];
-    const labelPos: Pt = [dimX - TICK * 3, (vMin + vMax) / 2, 0];
+    const labelPos: Pt = [dimX - TICK * 1.2, (vMin + vMax) / 2, 0];
     return { ext1, ext2, mainLine, tick1, tick2, labelPos, measuredDist: Math.abs(vMax - vMin) };
   }
 

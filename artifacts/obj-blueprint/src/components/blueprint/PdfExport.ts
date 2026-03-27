@@ -51,7 +51,7 @@ function computeLabelWorldPos(
   // ── Horizontal: label below the dim line ───────────────────────────────────
   if (axis === 'horizontal') {
     const dimY = min[1] - offset;
-    const labelY = dimY - TICK * 2.5;  // below the dim line
+    const labelY = dimY - TICK * 1.0;
 
     const h1 = isLeftRight ? p1[2] : p1[0];
     const h2 = isLeftRight ? p2[2] : p2[0];
@@ -61,7 +61,7 @@ function computeLabelWorldPos(
     return [midH, labelY, 0];
   }
 
-  // ── Vertical: label beyond the dim line (away from model) ─────────────────
+  // ── Vertical: label just beyond the dim line ───────────────────────────────
   if (axis === 'vertical') {
     const vMin = Math.min(p1[1], p2[1]);
     const vMax = Math.max(p1[1], p2[1]);
@@ -69,19 +69,19 @@ function computeLabelWorldPos(
 
     if (view === 'left') {
       const dimZ = max[2] + offset;
-      return [0, midV, dimZ + TICK * 3];           // beyond the dim line (+Z)
+      return [0, midV, dimZ + TICK * 1.2];
     }
     if (view === 'right') {
       const dimZ = min[2] - offset;
-      return [0, midV, dimZ - TICK * 3];           // beyond the dim line (−Z)
+      return [0, midV, dimZ - TICK * 1.2];
     }
     if (view === 'back') {
       const dimX = max[0] + offset;
-      return [dimX + TICK * 3, midV, 0];           // beyond the dim line (+X)
+      return [dimX + TICK * 1.2, midV, 0];
     }
     // front
     const dimX = min[0] - offset;
-    return [dimX - TICK * 3, midV, 0];             // beyond the dim line (−X)
+    return [dimX - TICK * 1.2, midV, 0];
   }
 
   // ── Diagonal fallback: midpoint ────────────────────────────────────────────
