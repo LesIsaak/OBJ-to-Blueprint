@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import * as THREE from 'three';
-import { exportCameraRef } from './ThreeCanvas';
+import { exportCameraRef } from './exportCamera';
 import type { Dimension, Unit } from '@/store/use-blueprint-store';
 
 /**
@@ -51,22 +51,44 @@ export const exportToPdf = (
     pdf.setFillColor(13, 17, 23);
     pdf.rect(0, 0, 297, 210, 'F');
 
-    // ── Canvas image — centered in a bordered area ────────────────────────────
-    // Reserve bottom 30mm for the title block
+    // ── Canvas image — centered, aspect-ratio preserved ───────────────────────
     const marginX = 10;
     const marginY = 10;
     const titleH  = 28;
-    const imgX = marginX;
-    const imgY = marginY;
-    const imgW = 297 - marginX * 2;
-    const imgH = 210 - marginY - titleH - 5;
+
+    // Maximum available area for the image
+    const areaW = 297 - marginX * 2;
+    const areaH = 210 - marginY - titleH - 5;
+
+    // Preserve canvas aspect ratio
+    const canvasAspect = canvas.width / canvas.height;
+    const areaAspect   = areaW / areaH;
+
+    let imgW: number, imgH: number;
+    if (canvasAspect > areaAspect) {
+      // Canvas is wider — fit to width
+      imgW = areaW;
+      imgH = areaW / canvasAspect;
+    } else {
+      // Canvas is taller — fit to height
+      imgH = areaH;
+      imgW = areaH * canvasAspect;
+    }
+
+    // Center within the available area
+    const imgX = marginX + (areaW - imgW) / 2;
+    const imgY = marginY + (areaH - imgH) / 2;
+
+    // Fill the area background before placing the image
+    pdf.setFillColor(13, 17, 23);
+    pdf.rect(marginX, marginY, areaW, areaH, 'F');
 
     pdf.addImage(imgData, 'PNG', imgX, imgY, imgW, imgH);
 
-    // ── Outer border ──────────────────────────────────────────────────────────
+    // ── Outer border around the full image area ───────────────────────────────
     pdf.setDrawColor(88, 166, 255);
     pdf.setLineWidth(0.4);
-    pdf.rect(imgX, imgY, imgW, imgH);
+    pdf.rect(marginX, marginY, areaW, areaH);
 
     // ── Dimension labels projected onto the PDF ───────────────────────────────
     const cam   = exportCameraRef.current;

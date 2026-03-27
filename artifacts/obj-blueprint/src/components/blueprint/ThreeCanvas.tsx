@@ -8,11 +8,7 @@ import { ModelViewer } from './ModelViewer';
 import { DimensionLine } from './DimensionLine';
 import { vertexStore } from './vertexStore';
 
-// Module-level ref so PdfExport can read the current camera
-export const exportCameraRef: { current: THREE.Camera | null; size: { w: number; h: number } } = {
-  current: null,
-  size: { w: 1, h: 1 },
-};
+import { exportCameraRef } from './exportCamera';
 
 // ─── Bounding info from OBJ ────────────────────────────────────────────────────
 
@@ -129,42 +125,31 @@ interface PointIndicatorProps {
 
 const PointIndicator: React.FC<PointIndicatorProps> = ({ position, snapped }) => {
   const { camera } = useThree();
-  // Scale with camera zoom so indicator is always ~12px equivalent
+  // Scale with camera zoom so indicator is always ~6px equivalent on screen
   const zoom = camera instanceof THREE.OrthographicCamera ? camera.zoom : 1;
-  const r = Math.max(0.3, 12 / zoom);
+  const r = Math.max(0.2, 6 / zoom);
 
-  const innerColor = snapped ? '#00ff88' : '#ffcc00';
+  const ringColor = snapped ? '#00ff88' : '#ffcc00';
 
   return (
     <group position={position} renderOrder={200}>
-      {/* White outer ring for visibility on any background */}
+      {/* Thin colored ring — transparent center so model shows through */}
       <mesh renderOrder={200}>
-        <ringGeometry args={[r * 1.2, r * 2.0, 20]} />
-        <meshBasicMaterial color="#ffffff" depthTest={false} side={THREE.DoubleSide} />
+        <ringGeometry args={[r, r * 1.6, 20]} />
+        <meshBasicMaterial color={ringColor} depthTest={false} side={THREE.DoubleSide} transparent opacity={0.9} />
       </mesh>
-      {/* Colored inner dot */}
-      <mesh renderOrder={201}>
-        <circleGeometry args={[r * 1.1, 20]} />
-        <meshBasicMaterial color={innerColor} depthTest={false} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Cross-hair lines for precise targeting */}
-      <line renderOrder={202}>
+      {/* Short cross-hair lines */}
+      <line renderOrder={201}>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[new Float32Array([-r * 3, 0, 0, r * 3, 0, 0]), 3]}
-          />
+          <bufferAttribute attach="attributes-position" args={[new Float32Array([-r * 2, 0, 0, r * 2, 0, 0]), 3]} />
         </bufferGeometry>
-        <lineBasicMaterial color="#ffffff" depthTest={false} transparent opacity={0.7} />
+        <lineBasicMaterial color={ringColor} depthTest={false} transparent opacity={0.7} />
       </line>
-      <line renderOrder={202}>
+      <line renderOrder={201}>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[new Float32Array([0, -r * 3, 0, 0, r * 3, 0]), 3]}
-          />
+          <bufferAttribute attach="attributes-position" args={[new Float32Array([0, -r * 2, 0, 0, r * 2, 0]), 3]} />
         </bufferGeometry>
-        <lineBasicMaterial color="#ffffff" depthTest={false} transparent opacity={0.7} />
+        <lineBasicMaterial color={ringColor} depthTest={false} transparent opacity={0.7} />
       </line>
     </group>
   );
