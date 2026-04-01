@@ -23,7 +23,6 @@ export interface Dimension {
 }
 
 interface BlueprintState {
-  projectId: number | null;
   projectName: string;
   objData: string | null;
   modelBounds: ModelBounds | null;
@@ -40,9 +39,6 @@ interface BlueprintState {
   draftPoint: [number, number, number] | null;
   selectedDimensionId: string | null;
 
-  setProject: (data: { id: number; name: string; objData: string | null; dimensions: Dimension[]; unit: Unit; scale: number }) => void;
-  resetProject: () => void;
-  setProjectId: (id: number) => void;
   setObjData: (data: string) => void;
   setModelBounds: (bounds: ModelBounds | null) => void;
   setProjectName: (name: string) => void;
@@ -66,7 +62,6 @@ const savedTheme = (localStorage.getItem('blueprint-theme') ?? 'dark') as 'dark'
 if (savedTheme === 'light') document.documentElement.classList.add('light');
 
 export const useBlueprintStore = create<BlueprintState>((set) => ({
-  projectId: null,
   projectName: 'Untitled Blueprint',
   objData: null,
   modelBounds: null,
@@ -83,35 +78,6 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
   draftPoint: null,
   selectedDimensionId: null,
 
-  setProject: (data) => set({
-    projectId: data.id,
-    projectName: data.name,
-    objData: data.objData,
-    dimensions: data.dimensions,
-    unit: data.unit,
-    scale: data.scale,
-    modelBounds: null,
-    viewMode: '3d',
-    isDrawing: false,
-    draftPoint: null,
-    selectedDimensionId: null,
-  }),
-
-  resetProject: () => set({
-    projectId: null,
-    projectName: 'Untitled Blueprint',
-    objData: null,
-    modelBounds: null,
-    dimensions: [],
-    unit: 'mm',
-    scale: 1,
-    viewMode: '3d',
-    isDrawing: false,
-    draftPoint: null,
-    selectedDimensionId: null,
-  }),
-
-  setProjectId: (id) => set({ projectId: id }),
   setObjData: (data) => set({ objData: data }),
   setModelBounds: (bounds) => set({ modelBounds: bounds }),
   setProjectName: (name) => set({ projectName: name }),
@@ -138,10 +104,9 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
   addDimension: (p1, p2) => set((state) => {
     const vm = state.viewMode;
 
-    // Determine dominant axis in view-plane coordinates
     const hDelta = (vm === 'left' || vm === 'right')
-      ? Math.abs(p2[2] - p1[2])   // Z is horizontal in left/right views
-      : Math.abs(p2[0] - p1[0]);  // X is horizontal in front/back views
+      ? Math.abs(p2[2] - p1[2])
+      : Math.abs(p2[0] - p1[0]);
     const vDelta = Math.abs(p2[1] - p1[1]);
 
     const axis: DimAxis =
@@ -149,7 +114,6 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
       : vDelta >= hDelta * 1.5 ? 'vertical'
       : 'diagonal';
 
-    // Chain index = number of existing dims in this view with the same axis
     const chainIndex = state.dimensions.filter(
       d => d.view === vm && d.axis === axis,
     ).length;
@@ -160,7 +124,6 @@ export const useBlueprintStore = create<BlueprintState>((set) => ({
         { id: uuidv4(), view: vm, p1, p2, axis, chainIndex },
       ],
       draftPoint: null,
-      // Stay in drawing mode so user can chain multiple measurements
       isDrawing: true,
     };
   }),
