@@ -1,5 +1,4 @@
 {
-  "framework": null,
   "installCommand": "pnpm install",
   "buildCommand": "pnpm --filter @workspace/obj-blueprint run build:gh-pages",
   "outputDirectory": "artifacts/obj-blueprint/dist"
