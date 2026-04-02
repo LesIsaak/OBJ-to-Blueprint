@@ -1,5 +1,6 @@
 {
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "pnpm run build:gh-pages",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

@@ -6,7 +6,7 @@ import path from "path";
 export default defineConfig({
   // For GitHub Pages repo sites: /repo-name/
   // Injected by the CI workflow via VITE_BASE_PATH env var.
-  base: process.env.VITE_BASE_PATH ?? "./",
+  base: process.env.VITE_BASE_PATH ?? "/",
 
   plugins: [react(), tailwindcss()],
 
