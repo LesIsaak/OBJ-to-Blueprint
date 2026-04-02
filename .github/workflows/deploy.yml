@@ -44,7 +44,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: artifacts/obj-blueprint/dist/gh-pages
+          path: artifacts/obj-blueprint/dist
 
   deploy:
     needs: build
